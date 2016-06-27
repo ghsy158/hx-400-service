@@ -53,4 +53,14 @@ public class Call400Service implements Call400Facade {
 		return call400Dao.getCurrentTime();
 	}
 
+	@Override
+	public List<JSONObject> queryERPCallsToday() throws Exception {
+		return call400Dao.queryERPCallsToday();
+	}
+
+	@Override
+	public int updateERPInfo(JSONObject jsonObject, JSONObject whereKey) throws Exception{
+		return call400Dao.updateERPInfo(jsonObject, whereKey);
+	}
+
 }

@@ -1,8 +1,11 @@
 package com.huaxia.call400.task;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,15 +18,32 @@ import com.huaxia.call400.facade.Call400Facade;
 import fgh.common.datasource.MultipleDataSource;
 import fgh.common.util.FastJsonConvert;
 
+/**
+ * 
+ * <b>系统名称：</b>同步400工单信息到ERP商机表<br>
+ * <b>模块名称：</b><br>
+ * <b>中文类名：</b><br>
+ * <b>概要说明：</b><br>
+ * 
+ * @author fgh
+ * @since 2016年6月29日上午9:12:40
+ */
 @Component
 public class Sync400CallsTask {
 
 	private static Logger logger = Logger.getLogger(Sync400CallsTask.class);
-	
-	/**存放当天已经同步的工单ID**/
+
+	/** 存放当天已经同步的工单ID **/
 	private Set<String> caseIdSet = new HashSet<String>(128);
-	/**存放当天同步失败的工单ID**/
+
+	/** 存放当天同步失败的工单ID **/
 	private Set<String> caseIdSetFailed = new HashSet<String>(128);
+
+	/** 存放当天400工单记录，用来比较是否有变化 **/
+//	private ConcurrentHashMap<String, JSONObject> todayCaseMap400 = new ConcurrentHashMap<String, JSONObject>();
+
+	/** 存放当天ERP工单记录，用来比较是否有变化 **/
+	private ConcurrentHashMap<String, JSONObject> todayCaseMapERP = new ConcurrentHashMap<String, JSONObject>();
 
 	@Autowired
 	private Call400Facade call400Facade;
@@ -33,7 +53,7 @@ public class Sync400CallsTask {
 	 * <b>方法名称：</b>批量同步自动任务<br>
 	 * <b>概要说明：</b><br>
 	 */
-//	@Scheduled(cron = "0/1 * *  * * ? ")
+	// @Scheduled(cron = "0/1 * * * * ? ")
 	public void sync400Calls() throws Exception {
 		MultipleDataSource.setDataSourceKey("sqlServerDataSource");
 		String json = call400Facade.get400Calls();
@@ -48,47 +68,121 @@ public class Sync400CallsTask {
 	 * 
 	 * <b>方法名称：</b>同步当天的400工单<br>
 	 * <b>概要说明：</b><br>
-	 * @throws Exception 
+	 * 
+	 * @throws Exception
 	 */
 	@Scheduled(cron = "0/5 * *  * * ? ")
-	public synchronized void sync400CallsToday(){
-		logger.info("同步400工单信息");
-		MultipleDataSource.setDataSourceKey("sqlServerDataSource");//400数据源
-		List<JSONObject> todayCaseList = null;;
+	public synchronized void sync400CallsToday() {
+//		logger.info("同步400工单信息");
+		MultipleDataSource.setDataSourceKey("sqlServerDataSource");// 400数据源
+		List<JSONObject> todayCaseList400 = null;
 		try {
-			todayCaseList = call400Facade.query400CallsToday();
+			todayCaseList400 = call400Facade.query400CallsToday();
 		} catch (Exception e1) {
-			logger.error("查询当天工单失败",e1);
+			logger.error("查询400当天工单失败", e1);
+		}
+
+		MultipleDataSource.setDataSourceKey("mySqlDataSource");// ERP数据源
+		// 查询ERP数据
+		List<JSONObject> todayCaseListERP = null;
+
+		try {
+			todayCaseListERP = call400Facade.queryERPCallsToday();
+		} catch (Exception e1) {
+			logger.error("查询ERP当天工单失败", e1);
 		}
 		
-		MultipleDataSource.setDataSourceKey("mySqlDataSource");//ERP数据源
-		for(JSONObject jsonObject:todayCaseList){
-			//先看下这笔工单是否已经同步过，如果已经同步过，不处理
-			String caseId = jsonObject.getString("uuid");
-			if(caseIdSet.contains(caseId)|| caseIdSetFailed.contains(caseId)){
-				logger.info("该工单已同步,工单id["+caseId+"]");
+		convertERP(todayCaseListERP);
+		
+		JSONObject caseERP = null;
+		for (JSONObject case400 : todayCaseList400) {
+			String caseId = case400.getString("uuid");
+			// 先看下这笔工单是否已经同步过，如果已经同步过，不处理
+			if (caseIdSet.contains(caseId) || caseIdSetFailed.contains(caseId)) {
+				//判断有没有更新
+				caseERP = todayCaseMapERP.get(caseId);
+				
+				// 比较数据是否有变化，如果有变化，更新ERP，否则不处理
+				if(isUpdate(case400, caseERP)){
+					logger.info("该工单已同步,数据有变化,需要更新ERP,工单id[" + caseId + "]");
+					case400.remove("uuid");
+					JSONObject whereKey = new JSONObject();
+					whereKey.put("uuid", caseId);
+					try {
+						call400Facade.updateERPInfo(case400, whereKey);
+					} catch (Exception e1) {
+						logger.info("更新ERP失败,工单id[" + caseId + "]",e1);
+					}
+				}else{
+//					logger.info("该工单已同步,没有变化,工单id[" + caseId + "]");
+				}
+				
 				continue;
-			}else{
-				int count =0;;
+			} else {
+				int count = 0;
 				try {
-					logger.info("同步工单:"+FastJsonConvert.convertObjectToJSON(jsonObject));
-					count = call400Facade.singleInsert2Opp(jsonObject);
-					//如果插入到ERP成功，把他缓存起来，下次不再入库
-					if(count>0){
+					logger.info("同步工单:" + FastJsonConvert.convertObjectToJSON(case400));
+					count = call400Facade.singleInsert2Opp(case400);
+					// 如果插入到ERP成功，把他缓存起来，下次不再入库
+					if (count > 0) {
 						caseIdSet.add(caseId);
-					}else{
-						logger.info("该工单同步到ERP数据库失败,工单id["+caseId+"]");
+					} else {
+						logger.info("该工单同步到ERP数据库失败,工单id[" + caseId + "]");
 					}
 				} catch (Exception e) {
-					if(e.getMessage().indexOf("Duplicate entry")>-1){
+					if (e.getMessage().indexOf("Duplicate entry") > -1) {
 						caseIdSet.add(caseId);
-						logger.info("该工单已同步,工单id["+caseId+"]");
-					}else{
+//						logger.info("该工单已同步,工单id[" + caseId + "]");
+					} else {
 						caseIdSetFailed.add(caseId);
-						logger.info("该工单同步到ERP数据库失败,需要手工处理,工单id["+caseId+"]");
+						logger.info("该工单同步到ERP数据库失败,需要手工处理,工单id[" + caseId + "]");
 					}
 				}
 			}
+		}
+	}
+
+	/**
+	 * 
+	 * <b>方法名称：</b>判断数据是否变化<br>
+	 * <b>概要说明：</b><br>
+	 */
+	private boolean isUpdate(JSONObject data400,JSONObject dataERP){
+		//判断数据是否变化
+		int count = 0;
+		Set<Entry<String,Object>> set = dataERP.entrySet();//400
+		for(Iterator<Entry<String,Object>> iterator = set.iterator();iterator.hasNext();){
+			Entry<String,Object> entryERP = iterator.next();
+			String key = entryERP.getKey();
+			String value400 = String.valueOf(entryERP.getValue());
+			String erpValue = String.valueOf(data400.get(key));
+			if(!value400.equals(erpValue)){
+				count++;
+			}
+//			if("bizType".equals(key)||"mortgageName".equals(key)||"loanIntention".equals(key)|| "customerName".equals(key)
+//					|| "customerMoile".equals(key)){
+//			}else{
+//				continue;
+//			}
+		}
+		if(count>0){
+			logger.info("******************该工单已修改,工单ID"+data400.get("uuid")+"******************");
+			logger.info("*******修改前*******"+FastJsonConvert.convertObjectToJSON(dataERP));
+			logger.info("*******修改后*******"+FastJsonConvert.convertObjectToJSON(data400));
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * 
+	 * <b>方法名称：</b>转换key是工单ID，value是数据集合<br>
+	 * <b>概要说明：</b><br>
+	 */
+	private void convertERP(List<JSONObject> list){
+		for (JSONObject jsonObject : list) {
+			String caseId = jsonObject.getString("uuid");
+			todayCaseMapERP.put(caseId, jsonObject);
 		}
 	}
 	
@@ -98,23 +192,8 @@ public class Sync400CallsTask {
 	 * <b>概要说明：</b><br>
 	 */
 	@Scheduled(cron = "0 30 23 * * ?")
-//	@Scheduled(cron = "0/10 * *  * * ? ")
-	public void clearCaseIdSet(){
-		logger.info("清空缓存的工单ID["+call400Facade.getCurrentTime()+"]");
+	public void clearCaseIdSet() {
+		logger.info("清空缓存的工单ID[" + call400Facade.getCurrentTime() + "]");
 		caseIdSet.clear();
 	}
-	
-	public static void main(String[] args) {
-//		List<String> caseList = new LinkedList<String>();
-		Set<String> set = new HashSet<String>();
-		// caseList.add("123");
-		// caseList.add("123");
-		// caseList.add("123");
-		set.add("123");
-		set.add("123");
-		set.add("123");
-		set.add("123");
-		System.out.println(set);
-	}
-
 }
