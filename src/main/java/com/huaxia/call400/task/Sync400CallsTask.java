@@ -144,6 +144,22 @@ public class Sync400CallsTask {
 
 	/**
 	 * 
+	 * <b>方法名称：</b>启动时查询ERP当天数据，如果已有，添加到已处理的集合中，防止一开始就执行插入操作而报错<br>
+	 * <b>概要说明：</b><br>
+	 */
+//	private void initData(){
+//		try {
+//			List<JSONObject> todayCaseListERP = call400Facade.queryERPCallsToday();
+//			for(JSONObject data:todayCaseListERP){
+//				caseIdSet.add(data.getString("uuid"));
+//			}
+//		} catch (Exception e) {
+//			logger.error("查询ERP当天工单失败", e);
+//		}
+//	}
+	
+	/**
+	 * 
 	 * <b>方法名称：</b>判断数据是否变化<br>
 	 * <b>概要说明：</b><br>
 	 */
@@ -195,5 +211,7 @@ public class Sync400CallsTask {
 	public void clearCaseIdSet() {
 		logger.info("清空缓存的工单ID[" + call400Facade.getCurrentTime() + "]");
 		caseIdSet.clear();
+		caseIdSetFailed.clear();
+		todayCaseMapERP.clear();
 	}
 }
