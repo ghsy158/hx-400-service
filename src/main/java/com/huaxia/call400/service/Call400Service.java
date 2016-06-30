@@ -26,14 +26,11 @@ import com.huaxia.call400.facade.Call400Facade;
 		"dubbo" })
 public class Call400Service implements Call400Facade {
 
-	private static Logger logger = Logger.getLogger(Call400Service.class);
-	
 	@Autowired
 	private Call400Dao call400Dao;
 
 	@Override
 	public String get400Calls() throws Exception {
-		logger.info("查询400所有工单信息");
 		return call400Dao.query400CallsAll();
 	}
 
@@ -44,7 +41,6 @@ public class Call400Service implements Call400Facade {
 
 	@Override
 	public List<JSONObject> query400CallsToday() throws Exception {
-		logger.info("查询400工单当天的数据");
 		return call400Dao.query400CallsToday();
 	}
 
@@ -60,7 +56,6 @@ public class Call400Service implements Call400Facade {
 
 	@Override
 	public List<JSONObject> queryERPCallsToday() throws Exception {
-		logger.info("查询ERP工单当天的数据");
 		return call400Dao.queryERPCallsToday();
 	}
 

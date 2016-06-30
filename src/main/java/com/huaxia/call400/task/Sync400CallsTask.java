@@ -85,7 +85,7 @@ public class Sync400CallsTask {
 			return;
 		}
 		
-		MultipleDataSource.setDataSourceKey("mySqlDataSource");// ERP数据源
+//		MultipleDataSource.setDataSourceKey("mySqlDataSource");// ERP数据源
 		// 查询ERP数据
 		List<JSONObject> todayCaseListERP = null;
 
@@ -196,6 +196,9 @@ public class Sync400CallsTask {
 	 * <b>概要说明：</b><br>
 	 */
 	private void convertERP(List<JSONObject> list){
+		if(null==list){
+			return;
+		}
 		for (JSONObject jsonObject : list) {
 			String caseId = jsonObject.getString("uuid");
 			todayCaseMapERP.put(caseId, jsonObject);
