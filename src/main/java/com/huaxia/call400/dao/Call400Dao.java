@@ -26,15 +26,17 @@ import fgh.common.datasource.MultipleDataSource;
 public class Call400Dao extends BaseJdbcDao {
 
 	private static final String TABLE_NAME = "pawn_busiOpportunity";
-	private static final String SQL_SELECT_400_CALLS = "SELECT a.CASEID uuid,ISNULL(a.YWLX,'') bizType,	ISNULL(a.YWXX,'') mortgageName,ISNULL(a.HUIDA,'') loanIntention,ISNULL(a.UNAME, '') customerName,"
+	private static final String SQL_SELECT_400_CALLS = "SELECT a.CASEID uuid,CASE WHEN a.YWLX='房产抵押' THEN '01' WHEN a.YWLX='抵押' THEN '02' ELSE '' END as bizType,"
+			+ " ISNULL(a.YWXX,'') mortgageName,ISNULL(a.HUIDA,'') loanIntention,ISNULL(a.UNAME, '') customerName,"
 			+ " ISNULL(a.CALLER,'') customerMoile,ISNULL(a.DHLY,'') chnl400,ISNULL(a.JRMD,'') storeName400,"
 			+ " ISNULL(a.KHWZ,'') customerLocation,'400user' createUser,'01' chnlType,'2' dealStatus,"
 			+ " ISNULL(SUBSTRING (a.SDATE, 1, 4) + '-' + SUBSTRING (a.SDATE, 5, 2) + '-' + SUBSTRING (a.SDATE, 7, 2) + ' ' + SUBSTRING (a.STIME, 1, 2) + ':' + SUBSTRING (a.SDATE, 3, 2) + ':' + SUBSTRING (a.SDATE, 5, 2),CONVERT(varchar(100), GETDATE(),120)) AS createTime "
 			+ " ,ISNULL(a.INFO, '') remark"
-			+ " FROM CallThink_CRM.dbo.CRM_CASE2 a";
+			+ " FROM CallThink_CRM.dbo.CRM_CASE2 a"
+			+ " where a.YWLX IN('汽车抵押','房产抵押')";
 
 	private static final String SQL_SELECT_400_CALLS_TODAY = SQL_SELECT_400_CALLS
-			+ " where a.SDATE=convert(varchar, getdate(), 112)";
+			+ " and a.SDATE=convert(varchar, getdate(), 112) ";
 	
 	private static final String SQL_SELECT_ERP_CALLS_TODAY = "SELECT a.uuid uuid,	IFNULL(a.bizType, '') bizType,IFNULL(a.mortgageName, '') mortgageName,"
 			+ " IFNULL(a.loanIntention, '') loanIntention,IFNULL(a.customerName, '') customerName,IFNULL(a.customerMoile, '') customerMoile"
