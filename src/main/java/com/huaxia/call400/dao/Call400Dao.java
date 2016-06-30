@@ -9,8 +9,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 
-import fgh.common.constant.Const;
 import fgh.common.dao.BaseJdbcDao;
+import fgh.common.datasource.MultipleDataSource;
 
 /**
  * 
@@ -30,7 +30,8 @@ public class Call400Dao extends BaseJdbcDao {
 			+ " ISNULL(a.CALLER,'') customerMoile,ISNULL(a.DHLY,'') chnl400,ISNULL(a.JRMD,'') storeName400,"
 			+ " ISNULL(a.KHWZ,'') customerLocation,'400user' createUser,'01' chnlType,'2' dealStatus,"
 			+ " ISNULL(SUBSTRING (a.SDATE, 1, 4) + '-' + SUBSTRING (a.SDATE, 5, 2) + '-' + SUBSTRING (a.SDATE, 7, 2) + ' ' + SUBSTRING (a.STIME, 1, 2) + ':' + SUBSTRING (a.SDATE, 3, 2) + ':' + SUBSTRING (a.SDATE, 5, 2),CONVERT(varchar(100), GETDATE(),120)) AS createTime "
-			+ " FROM CallThinck_CRM.dbo.CRM_CASE2 a";
+			+ " ,ISNULL(a.INFO, '') remark"
+			+ " FROM CallThink_CRM.dbo.CRM_CASE2 a";
 
 	private static final String SQL_SELECT_400_CALLS_TODAY = SQL_SELECT_400_CALLS
 			+ " where a.SDATE=convert(varchar, getdate(), 112)";
@@ -47,7 +48,7 @@ public class Call400Dao extends BaseJdbcDao {
 	 * <b>概要说明：</b><br>
 	 */
 	public String query400CallsAll() throws Exception {
-		super.setTargetDataSource("sqlServerDataSource", Const.DatabaseType.SQLSERVER);
+		MultipleDataSource.setDataSourceKey("sqlServerDataSource");
 		return super.queryForJsonListString(SQL_SELECT_400_CALLS);
 	}
 
@@ -70,7 +71,7 @@ public class Call400Dao extends BaseJdbcDao {
 	 * <b>概要说明：</b><br>
 	 */
 	public List<JSONObject> query400CallsToday() throws Exception {
-		super.setTargetDataSource("sqlServerDataSource", Const.DatabaseType.SQLSERVER);
+		MultipleDataSource.setDataSourceKey("sqlServerDataSource");
 		return super.queryForJsonList(SQL_SELECT_400_CALLS_TODAY);
 	}
 
@@ -89,7 +90,7 @@ public class Call400Dao extends BaseJdbcDao {
 	 * <b>概要说明：</b><br>
 	 */
 	public List<JSONObject> queryERPCallsToday() throws Exception {
-		super.setTargetDataSource("mySqlDataSource", Const.DatabaseType.MYSQL);
+		MultipleDataSource.setDataSourceKey("mySqlDataSource");
 		return super.queryForJsonList(SQL_SELECT_ERP_CALLS_TODAY);
 	}
 	
