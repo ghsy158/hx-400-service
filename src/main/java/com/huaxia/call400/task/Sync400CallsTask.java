@@ -71,9 +71,9 @@ public class Sync400CallsTask {
 	 * 
 	 * @throws Exception
 	 */
-	@Scheduled(cron = "0/5 * *  * * ? ")
+	@Scheduled(cron = "0/30 * * * * ?")
 	public synchronized void sync400CallsToday() {
-//		logger.info("同步400工单信息");
+		logger.info("同步400工单信息");
 		List<JSONObject> todayCaseList400 = null;
 		try {
 			todayCaseList400 = call400Facade.query400CallsToday();
