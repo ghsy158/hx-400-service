@@ -9,6 +9,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 
+import fgh.common.constant.Const;
 import fgh.common.dao.BaseJdbcDao;
 
 /**
@@ -41,16 +42,12 @@ public class Call400Dao extends BaseJdbcDao {
 			+ " FROM  pawn_busiOpportunity a"
 			+ " WHERE DATE_FORMAT(a.createTime, '%Y-%m-%d') = DATE_FORMAT(SYSDATE(), '%Y-%m-%d')"; 
 
-	// private static final String INSERT_SQL = "INSERT INTO
-	// pawn_busiOpportunity
-	// (uuid,bizType,mortgageName,loanIntention,customerName,customerMoile,chnlType,chnl400,reply400,storeName400,customerLocation,createUser,createTime)
-	// VALUES(?,?,?,?,?,?,'01',?,?,?,?,?, NOW()) ";
-
 	/**
 	 * <b>方法名称：</b>查询400所有工单信息<br>
 	 * <b>概要说明：</b><br>
 	 */
 	public String query400CallsAll() throws Exception {
+		super.setTargetDataSource("sqlServerDataSource", Const.DatabaseType.SQLSERVER);
 		return super.queryForJsonListString(SQL_SELECT_400_CALLS);
 	}
 
@@ -64,8 +61,6 @@ public class Call400Dao extends BaseJdbcDao {
 				new TypeReference<List<LinkedHashMap<String, Object>>>() {
 				});
 		// System.out.println(list);
-		// super.insert(SQL_TABLE_NAME,
-		// FastJsonConvert.convertObjectToJSONObject(list.get(0)));
 		super.batchInsertByTableName(TABLE_NAME, list);
 	}
 
@@ -75,6 +70,7 @@ public class Call400Dao extends BaseJdbcDao {
 	 * <b>概要说明：</b><br>
 	 */
 	public List<JSONObject> query400CallsToday() throws Exception {
+		super.setTargetDataSource("sqlServerDataSource", Const.DatabaseType.SQLSERVER);
 		return super.queryForJsonList(SQL_SELECT_400_CALLS_TODAY);
 	}
 
@@ -93,6 +89,7 @@ public class Call400Dao extends BaseJdbcDao {
 	 * <b>概要说明：</b><br>
 	 */
 	public List<JSONObject> queryERPCallsToday() throws Exception {
+		super.setTargetDataSource("mySqlDataSource", Const.DatabaseType.MYSQL);
 		return super.queryForJsonList(SQL_SELECT_ERP_CALLS_TODAY);
 	}
 	

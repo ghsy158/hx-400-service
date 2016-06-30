@@ -74,14 +74,17 @@ public class Sync400CallsTask {
 	@Scheduled(cron = "0/5 * *  * * ? ")
 	public synchronized void sync400CallsToday() {
 //		logger.info("同步400工单信息");
-		MultipleDataSource.setDataSourceKey("sqlServerDataSource");// 400数据源
 		List<JSONObject> todayCaseList400 = null;
 		try {
 			todayCaseList400 = call400Facade.query400CallsToday();
 		} catch (Exception e1) {
 			logger.error("查询400当天工单失败", e1);
 		}
-
+		
+		if(null == todayCaseList400 || todayCaseList400.isEmpty()){
+			return;
+		}
+		
 		MultipleDataSource.setDataSourceKey("mySqlDataSource");// ERP数据源
 		// 查询ERP数据
 		List<JSONObject> todayCaseListERP = null;
@@ -101,7 +104,6 @@ public class Sync400CallsTask {
 			if (caseIdSet.contains(caseId) || caseIdSetFailed.contains(caseId)) {
 				//判断有没有更新
 				caseERP = todayCaseMapERP.get(caseId);
-				
 				// 比较数据是否有变化，如果有变化，更新ERP，否则不处理
 				if(isUpdate(case400, caseERP)){
 					logger.info("该工单已同步,数据有变化,需要更新ERP,工单id[" + caseId + "]");
@@ -116,8 +118,6 @@ public class Sync400CallsTask {
 				}else{
 //					logger.info("该工单已同步,没有变化,工单id[" + caseId + "]");
 				}
-				
-				continue;
 			} else {
 				int count = 0;
 				try {
