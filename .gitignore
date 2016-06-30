@@ -7,9 +7,9 @@ target/
 *.tar.gz
 
 # eclipse ignore
-#.settings/
-#.project
-#.classpath
+.settings/
+.project
+.classpath
 
 # idea ignore
 .idea/
@@ -26,7 +26,14 @@ target/
 *.java~
 *.properties~
 *.xml~
+/logs
 
 # system ignore
 .DS_Store
 Thumbs.db
+
+#git
+.gitignore
+
+#personal
+/src/main/resources/config.properties
