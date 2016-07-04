@@ -212,7 +212,7 @@ public class Sync400CallsTask {
 	 */
 	@Scheduled(cron = "0 30 23 * * ?")
 	public void clearCaseIdSet() {
-		logger.info("清空缓存的工单ID[" + call400Facade.getCurrentTime() + "]");
+		logger.info("清空缓存的工单ID");
 		caseIdSet.clear();
 		caseIdSetFailed.clear();
 		todayCaseMapERP.clear();
