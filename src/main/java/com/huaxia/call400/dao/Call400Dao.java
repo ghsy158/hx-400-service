@@ -11,6 +11,7 @@ import com.alibaba.fastjson.TypeReference;
 
 import fgh.common.dao.BaseJdbcDao;
 import fgh.common.datasource.MultipleDataSource;
+import fgh.common.util.EncryptUtil;
 
 /**
  * 
@@ -80,7 +81,14 @@ public class Call400Dao extends BaseJdbcDao {
 	 */
 	public List<JSONObject> query400CallsToday() throws Exception {
 		MultipleDataSource.setDataSourceKey("sqlServerDataSource");
-		return super.queryForJsonList(SQL_SELECT_400_CALLS_TODAY);
+		
+		List<JSONObject> result = super.queryForJsonList(SQL_SELECT_400_CALLS_TODAY);
+		String mobile = "";
+		for (JSONObject jsonObj : result) {
+			mobile = EncryptUtil.getInstance().encrypt(jsonObj.getString("customerMoile"));
+			jsonObj.put("customerMoile", mobile);
+		}
+		return result;
 	}
 
 	/**
